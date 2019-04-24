@@ -2,7 +2,8 @@ var map;
 var marker;
 var circle;
 const metersPerMile = 1609.344;
-const radius = 150 * metersPerMile;
+const defaultRadius = 150 * metersPerMile;
+const maxRadius = 300 * metersPerMile;
 
 function initMap() {
     var latitude = 47.6918452
@@ -18,20 +19,16 @@ function initMap() {
 }
 
 function placeMarker(location, map) {
-    if(marker != null) {
-        removeFromMap(marker);
-    }
-    if(circle != null) {
-        removeFromMap(circle);
-    }
-
+    oldMarker = marker;
+    oldCircle = circle;
     marker = new google.maps.Marker({
         position: location,
         map: map,
     });
     circle = new google.maps.Circle({
         map: map,
-        radius: radius,
+        radius: oldCircle == null ? defaultRadius : oldCircle.getRadius(),
+        editable: true,
         fillColor: '#228B22', // Forest green
         strokeColor: '#1B4D3E', // Brunswick green
         strokeOpacity: .8,
@@ -40,11 +37,32 @@ function placeMarker(location, map) {
     map.panTo(location);
 
     circle.addListener('click', function(event) {
-        placeMarker(event.latLng, circle.getMap());
+        placeMarker(event.latLng, this.getMap());
+    });
+    circle.addListener('radius_changed',function(){
+        if (this.getRadius() > maxRadius) {
+            this.setRadius(maxRadius);
+        }
+
+        getParksNearby();
     });
 
+    getParksNearby();
+
+    if(oldMarker != null) {
+        removeFromMap(oldMarker);
+    }
+    if(oldCircle != null) {
+        removeFromMap(oldCircle);
+    }
+}
+
+function getParksNearby() {
     var url = new URL(window.location.origin + '/parksNearby');
-    var params = {latitude: location.lat(), longitude: location.lng(), radius: radius}
+    const latitude = marker.getPosition().lat();
+    const longitude = marker.getPosition().lng();
+    const radius = circle.getRadius()
+    var params = {latitude: latitude, longitude: longitude, radius: radius}
     url.search = new URLSearchParams(params)
     fetch(url)
         .then(data=>{return data.json()})

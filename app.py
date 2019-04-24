@@ -3,7 +3,7 @@ import requests
 import json
 import urllib.parse
 import geopy.distance
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, abort
 from deeppavlov import build_model, configs
 from bs4 import BeautifulSoup
 from unicodedata import normalize
@@ -37,7 +37,7 @@ def landing():
     return 'This is the NLP Project 3 API service.'
 
 def google_results(latitude, longitude):
-    url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?location={},{}&query=national%20park&type=park&key={}'.format(latitude, longitude, GOOGLE_MAPS_API_KEY)
+    url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?language=en&location={},{}&query=national%20park&type=park&key={}'.format(latitude, longitude, GOOGLE_MAPS_API_KEY)
     result = requests.get(url)
     if result.ok:
         print('Response ok')
@@ -50,6 +50,8 @@ def results_in_radius():
     latitude = request.args.get('latitude')
     longitude = request.args.get('longitude')
     radius = float(request.args.get('radius')) / meters_per_mile
+    if radius > 300:
+        abort(400)
     print(radius)
 
     maps_results = google_results(latitude, longitude)
