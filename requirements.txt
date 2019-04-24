@@ -2,3 +2,4 @@ deeppavlov
 flask
 beautifulsoup4
 lxml
+geopy
