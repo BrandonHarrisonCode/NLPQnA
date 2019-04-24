@@ -91,7 +91,7 @@ def get_wikipedia_page(title):
 
 @app.route('/answer', methods=['GET'])
 def answer_form():
-    return render_template('answerform.html')
+    return render_template('answerform.html', GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY)
 
 
 @app.route('/answer', methods=['POST'])

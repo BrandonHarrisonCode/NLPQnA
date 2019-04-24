@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN FLASK_APP=app.py
 COPY app.py ./
 COPY templates ./templates/
+COPY static ./static/
 
 CMD ["flask", "run", "--host=0.0.0.0"]
 

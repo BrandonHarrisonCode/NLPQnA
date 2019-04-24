@@ -4,8 +4,24 @@
     <title>QnA Page</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
   </head>
   <body>
+    <div id="map"></div>
+    <script>
+    </script>
     <form action="/answer" method="post">
       Context:<br>
       <textarea rows="4" cols="50" name="context">
@@ -15,6 +31,12 @@
       <input type="submit" value="Ask"><br>
     </form>
     Previous ans: {{ ans }}
+    <script
+  src="https://code.jquery.com/jquery-3.4.0.slim.min.js"
+  integrity="sha256-ZaXnYkHGqIhqTbJ6MB4l9Frs/r7U4jlx7ir8PJYBqbI="
+  crossorigin="anonymous"></script>
     <script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static', filename='js/maps.js') }}"></script>
+    <script src={{ "https://maps.googleapis.com/maps/api/js?key=" + GOOGLE_MAPS_API_KEY + "&callback=initMap" }} async defer></script>
   </body>
 </html>
