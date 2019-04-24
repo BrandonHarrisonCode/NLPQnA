@@ -13,6 +13,7 @@ app = Flask(__name__)
 GOOGLE_MAPS_API_KEY = os.environ['GOOGLE_MAPS_API_KEY']
 NPS_API_KEY = os.environ['NPS_API_KEY']
 national_park_names = None
+meters_per_mile = 1609.344;
 
 def get_national_park_names():
     names = set()
@@ -44,11 +45,13 @@ def google_results(latitude, longitude):
     return None
 
 
-@app.route('/test', methods=['GET'])
-def test():
-    question = 'How big is the park?'
-    latitude = '47.6918452'
-    longitude = '-122.2226413'
+@app.route('/parksNearby', methods=['GET'])
+def results_in_radius():
+    latitude = request.args.get('latitude')
+    longitude = request.args.get('longitude')
+    radius = float(request.args.get('radius')) / meters_per_mile
+    print(radius)
+
     maps_results = google_results(latitude, longitude)
     locations = maps_results['results']
     national_parks = []
@@ -58,15 +61,18 @@ def test():
         loc_lng = location['geometry']['location']['lng']
         distance = geopy.distance.distance((latitude, longitude), (loc_lat, loc_lng)).miles
         print('Name & distance: {} - {}'.format(location['name'], distance))
-        if distance <= 300 and name in national_park_names:
-            park = {'name': name, 'latitude': loc_lat, 'longitude': loc_lng, 'distance': distance}
+        if distance <= radius and name in national_park_names:
+            park = {'name': name, 'latitude': loc_lat, 'longitude': loc_lng}
             print(park)
             national_parks.append(park)
+    return json.dumps(national_parks)
 
+
+def ask_questions(national_parks):
     responses = []
     for park in national_parks:
         page = get_wikipedia_page(park['name'])
-        responses.append((park['name'], park['distance'], model([page], [question])))
+        responses.append((park['name'], model([page], [question])))
     print(responses)
     return str(responses)
 
@@ -86,7 +92,6 @@ def get_wikipedia_page(title):
     text = BeautifulSoup(page, 'lxml').get_text()
     normalized_text = normalize('NFKD', text)
     return normalized_text
-
 
 
 @app.route('/answer', methods=['GET'])

@@ -1,7 +1,9 @@
 var map;
 var marker;
 var circle;
-var metersPerMile = 1609.344;
+const metersPerMile = 1609.344;
+const radius = 150 * metersPerMile;
+
 function initMap() {
     var latitude = 47.6918452
     var longitude = -122.2226413
@@ -29,13 +31,24 @@ function placeMarker(location, map) {
     });
     circle = new google.maps.Circle({
         map: map,
-        radius: 150 * metersPerMile,
+        radius: radius,
         fillColor: '#228B22', // Forest green
         strokeColor: '#1B4D3E', // Brunswick green
         strokeOpacity: .8,
     });
     circle.bindTo('center', marker, 'position');
     map.panTo(location);
+
+    circle.addListener('click', function(event) {
+        placeMarker(event.latLng, circle.getMap());
+    });
+
+    var url = new URL(window.location.origin + '/parksNearby');
+    var params = {latitude: location.lat(), longitude: location.lng(), radius: radius}
+    url.search = new URLSearchParams(params)
+    fetch(url)
+        .then(data=>{return data.json()})
+        .then(res=>{console.log(res)})
 }
 
 function removeFromMap(object) {
