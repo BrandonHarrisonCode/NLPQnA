@@ -93,9 +93,15 @@ function createParksMarker(park) {
         return null;
     }
 
+    var icon = {
+        url: 'https://image.flaticon.com/icons/png/512/8/8181.png',
+        scaledSize: new google.maps.Size(50, 50), // scaled size
+    };
+
     var parkMarker = new google.maps.Marker({
         position: {lat: park.latitude, lng: park.longitude},
         map: map,
+        icon: icon,
     });
 
     return parkMarker;

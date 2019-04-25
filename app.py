@@ -50,14 +50,6 @@ national_parks_official = get_national_parks_official()
 def landing():
     return 'This is the NLP Project 3 API service.'
 
-def google_results(latitude, longitude):
-    url = 'https://maps.googleapis.com/maps/api/place/textsearch/json?language=en&location={},{}&query=national%20park&type=park&key={}'.format(latitude, longitude, GOOGLE_MAPS_API_KEY)
-    result = requests.get(url)
-    if result.ok:
-        print('Response ok')
-        return json.loads(result.content)
-    return None
-
 
 @app.route('/parksNearby', methods=['GET'])
 def results_in_radius():
@@ -68,8 +60,6 @@ def results_in_radius():
         abort(400)
     print(radius)
 
-    # maps_results = google_results(latitude, longitude)
-    # locations = maps_results['results']
     inbound_parks = []
     for park in national_parks_official:
         name = park['name'] 
