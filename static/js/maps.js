@@ -1,6 +1,7 @@
 var map;
 var marker;
 var circle;
+var parkMarkers;
 const metersPerMile = 1609.344;
 const defaultRadius = 150 * metersPerMile;
 const maxRadius = 300 * metersPerMile;
@@ -21,6 +22,7 @@ function initMap() {
 function placeMarker(location, map) {
     oldMarker = marker;
     oldCircle = circle;
+
     marker = new google.maps.Marker({
         position: location,
         map: map,
@@ -66,10 +68,35 @@ function getParksNearby() {
     url.search = new URLSearchParams(params)
     fetch(url)
         .then(data=>{return data.json()})
-        .then(res=>{console.log(res)})
+        .then(res=>{markParks(res)})
 }
 
 function removeFromMap(object) {
+    if(object == null) {
+        return;
+    }
     object.setMap(null);
     object = null;
+}
+
+function markParks(parks) {
+    if(parkMarkers != null) {
+        parkMarkers.map(removeFromMap);
+    }
+
+    console.log(parks);
+    parkMarkers = parks.map(createParksMarker);
+}
+
+function createParksMarker(park) {
+    if(park == null) {
+        return null;
+    }
+
+    var parkMarker = new google.maps.Marker({
+        position: {lat: park.latitude, lng: park.longitude},
+        map: map,
+    });
+
+    return parkMarker;
 }

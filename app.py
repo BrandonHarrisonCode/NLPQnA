@@ -63,7 +63,7 @@ def results_in_radius():
         loc_lng = location['geometry']['location']['lng']
         distance = geopy.distance.distance((latitude, longitude), (loc_lat, loc_lng)).miles
         print('Name & distance: {} - {}'.format(location['name'], distance))
-        if distance <= radius and name in national_park_names:
+        if distance <= radius and name in national_park_names and not any(name in park['name'] for park in national_parks):
             park = {'name': name, 'latitude': loc_lat, 'longitude': loc_lng}
             print(park)
             national_parks.append(park)
