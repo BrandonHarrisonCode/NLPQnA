@@ -12,11 +12,22 @@ model = build_model(configs.squad.squad, download=True)
 app = Flask(__name__)
 GOOGLE_MAPS_API_KEY = os.environ['GOOGLE_MAPS_API_KEY']
 NPS_API_KEY = os.environ['NPS_API_KEY']
-national_park_names = None
+national_parks_official = None
 meters_per_mile = 1609.344;
 
-def get_national_park_names():
-    names = set()
+
+def getLatLong(park):
+    data = park['latLong']
+    lat_start = data.index(':') + 1
+    lat_end = data.index(',', lat_start)
+    lng_start = data.index(':', lat_end) + 1
+    latitude = data[lat_start:lat_end]
+    longitude = data[lng_start:]
+    return float(latitude), float(longitude)
+
+
+def get_national_parks_official():
+    parks = []
     limit = 50
     start = 0
     while True:
@@ -27,10 +38,13 @@ def get_national_park_names():
             break
         for park in data:
             if 'National Park' in park['designation']:
-                names.add(park['fullName'])
+                name = park['fullName']
+                latitude, longitude = getLatLong(park)
+                parks.append({'name': name, 'lat': latitude, 'lng': longitude})
         start += limit
-    return names
-national_park_names = get_national_park_names()
+    return parks
+national_parks_official = get_national_parks_official()
+
 
 @app.route('/', methods=['GET'])
 def landing():
@@ -54,20 +68,20 @@ def results_in_radius():
         abort(400)
     print(radius)
 
-    maps_results = google_results(latitude, longitude)
-    locations = maps_results['results']
-    national_parks = []
-    for location in locations:
-        name = location['name']
-        loc_lat = location['geometry']['location']['lat']
-        loc_lng = location['geometry']['location']['lng']
+    # maps_results = google_results(latitude, longitude)
+    # locations = maps_results['results']
+    inbound_parks = []
+    for park in national_parks_official:
+        name = park['name'] 
+        loc_lat = park['lat']
+        loc_lng = park['lng']
         distance = geopy.distance.distance((latitude, longitude), (loc_lat, loc_lng)).miles
-        print('Name & distance: {} - {}'.format(location['name'], distance))
-        if distance <= radius and name in national_park_names and not any(name in park['name'] for park in national_parks):
+        print('Name & distance: {} - {}'.format(name, distance))
+        if distance <= radius:
             park = {'name': name, 'latitude': loc_lat, 'longitude': loc_lng}
             print(park)
-            national_parks.append(park)
-    return json.dumps(national_parks)
+            inbound_parks.append(park)
+    return json.dumps(inbound_parks)
 
 
 def ask_questions(national_parks):
