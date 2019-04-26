@@ -96,9 +96,8 @@ def get_wikipedia_page(title):
     pages = data['query']['pages']
     page = None
     for item in pages.values():
-        if title in item['title']:
-            page = item['extract']
-            break
+        page = item['extract']
+        break
     if page is None:
         print('ERROR getting wikipedia page for {}'.format(title))
         return None
