@@ -3,6 +3,8 @@ import requests
 import json
 import urllib.parse
 import geopy.distance
+import itertools
+from multiprocessing.dummy import Pool as ThreadPool
 from flask import Flask, request, render_template, abort, url_for
 from deeppavlov import build_model, configs
 from bs4 import BeautifulSoup
@@ -14,7 +16,7 @@ GOOGLE_MAPS_API_KEY = os.environ['GOOGLE_MAPS_API_KEY']
 NPS_API_KEY = os.environ['NPS_API_KEY']
 national_parks_official = None
 meters_per_mile = 1609.344;
-
+pool = ThreadPool(4)
 
 def getLatLong(park):
     data = park['latLong']
@@ -112,9 +114,11 @@ def ask():
     question = data.get('question')
     if parks is None or question is None:
         abort(400)
-    output = []
-    for park in parks:
-        context = get_wikipedia_page(park)
-        response = model([context], [question]) if context is not None else None
-        output.append({'name': park, 'answer': response})
-    return json.dumps(output)
+
+    results = pool.starmap(ask_park, zip(parks, itertools.repeat(question)))
+    return json.dumps(results)
+
+def ask_park(park, question):
+    context = get_wikipedia_page(park)
+    response = model([context], [question]) if context is not None else None
+    return {'name': park, 'answer': response}
