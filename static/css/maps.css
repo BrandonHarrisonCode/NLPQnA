@@ -1,0 +1,23 @@
+#map {
+    height: 100%;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+a {
+    cursor:pointer;
+}
+
+a, label {
+    padding:0px 5px;
+}
+
+#controls {
+    margin-top:2px;
+    background-color:white;
+    padding:5px;
+}

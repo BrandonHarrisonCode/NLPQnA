@@ -2,6 +2,7 @@ var map;
 var marker;
 var circle;
 var parkMarkers;
+var infoWindows;
 const metersPerMile = 1609.344;
 const defaultRadius = 150 * metersPerMile;
 const maxRadius = 300 * metersPerMile;
@@ -75,7 +76,7 @@ function askQuestion(question) {
         body: JSON.stringify(payload),
     })
         .then(data=>{return data.json()})
-        .then(res=>{console.log(res)})
+        .then(res=>{addInfoWindows(res)})
 }
 
 function placeMarker(location, map) {
@@ -157,11 +158,31 @@ function createParksMarker(park) {
     };
 
     var parkMarker = new google.maps.Marker({
-        position: {lat: park.latitude, lng: park.longitude},
+        position: {lat: park.lat, lng: park.lng},
         map: map,
         icon: icon,
         title: park.name,
     });
 
     return parkMarker;
+}
+
+function addInfoWindows(parks) {
+    parks.map(createInfoWindow);
+}
+
+function createInfoWindow(park) {
+    var answer = park.answer;
+    if(answer == null) {
+        return;
+    }
+    var infoWindow = new google.maps.InfoWindow({
+        content: "<b>" + park.name + ":</b> " + String(answer[0])
+    });
+    var marker = parkMarkers.find(x => x.getTitle() === park.name);
+    marker.addListener('click', function() {
+        this.setAnimation(null);
+        infoWindow.open(map, marker);
+    });
+    marker.setAnimation(google.maps.Animation.BOUNCE);
 }

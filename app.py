@@ -92,11 +92,13 @@ def get_wikipedia_page(title):
     raw = requests.get(url).content
     data = json.loads(raw)
     pages = data['query']['pages']
+    page = None
     for item in pages.values():
         if title in item['title']:
             page = item['extract']
             break
     if page is None:
+        print('ERROR getting wikipedia page for {}'.format(title))
         return None
     text = BeautifulSoup(page, 'lxml').get_text()
     normalized_text = normalize('NFKD', text)
@@ -113,6 +115,6 @@ def ask():
     output = []
     for park in parks:
         context = get_wikipedia_page(park)
-        response = model([context], [question])
+        response = model([context], [question]) if context is not None else None
         output.append({'name': park, 'answer': response})
     return json.dumps(output)
