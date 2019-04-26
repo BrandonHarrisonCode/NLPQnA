@@ -1,11 +1,11 @@
 var map;
-var marker;
+var center;
 var circle;
 var parkMarkers;
-var infoWindows;
 const metersPerMile = 1609.344;
 const defaultRadius = 150 * metersPerMile;
 const maxRadius = 300 * metersPerMile;
+const confidenceThreshold = 1000;
 
 function initMap() {
     var latitude = 47.6918452
@@ -16,7 +16,7 @@ function initMap() {
     });
 
     map.addListener('click', function(event) {
-        placeMarker(event.latLng, map);
+        placeCenter(event.latLng, map);
     });
 
     controlDiv = createControlDiv();
@@ -79,11 +79,11 @@ function askQuestion(question) {
         .then(res=>{addInfoWindows(res)})
 }
 
-function placeMarker(location, map) {
-    oldMarker = marker;
+function placeCenter(location, map) {
+    oldCenter = center;
     oldCircle = circle;
 
-    marker = new google.maps.Marker({
+    center = new google.maps.Marker({
         position: location,
         map: map,
     });
@@ -95,11 +95,11 @@ function placeMarker(location, map) {
         strokeColor: '#1B4D3E', // Brunswick green
         strokeOpacity: .8,
     });
-    circle.bindTo('center', marker, 'position');
+    circle.bindTo('center', center, 'position');
     map.panTo(location);
 
     circle.addListener('click', function(event) {
-        placeMarker(event.latLng, this.getMap());
+        placeCenter(event.latLng, this.getMap());
     });
     circle.addListener('radius_changed',function(){
         if (this.getRadius() > maxRadius) {
@@ -111,8 +111,8 @@ function placeMarker(location, map) {
 
     getParksNearby();
 
-    if(oldMarker != null) {
-        removeFromMap(oldMarker);
+    if(oldCenter != null) {
+        removeFromMap(oldCenter);
     }
     if(oldCircle != null) {
         removeFromMap(oldCircle);
@@ -121,8 +121,8 @@ function placeMarker(location, map) {
 
 function getParksNearby() {
     var url = new URL(window.location.origin + '/parksNearby');
-    const latitude = marker.getPosition().lat();
-    const longitude = marker.getPosition().lng();
+    const latitude = center.getPosition().lat();
+    const longitude = center.getPosition().lng();
     const radius = circle.getRadius()
     var params = {latitude: latitude, longitude: longitude, radius: radius}
     url.search = new URLSearchParams(params)
@@ -135,7 +135,9 @@ function removeFromMap(object) {
     if(object == null) {
         return;
     }
-    object.setMap(null);
+    if(typeof(object.setMap) !== "undefined") {
+        object.setMap(null);
+    }
     object = null;
 }
 
@@ -173,16 +175,34 @@ function addInfoWindows(parks) {
 
 function createInfoWindow(park) {
     var answer = park.answer;
-    if(answer == null) {
-        return;
+    var answerText = "<b>No answer found.</b>";
+    var confidence = 0;
+    if(answer != null) {
+        confidence = answer[2];
+        console.log(park.name + ": " + confidence);
+        if(confidence >= confidenceThreshold) {
+            answerText = String(answer[0]);
+        }
     }
+
+    var content = "<b>" + park.name + ":</b> " + answerText
     var infoWindow = new google.maps.InfoWindow({
-        content: "<b>" + park.name + ":</b> " + String(answer[0])
+        content: content
     });
+
     var marker = parkMarkers.find(x => x.getTitle() === park.name);
+    if(marker.infoWindow != null) {
+        marker.infoWindow.close();
+    }
+    marker.infoWindow = infoWindow;
     marker.addListener('click', function() {
         this.setAnimation(null);
-        infoWindow.open(map, marker);
+        this.infoWindow.open(map, marker);
     });
-    marker.setAnimation(google.maps.Animation.BOUNCE);
+
+    if(confidence >= confidenceThreshold) {
+        marker.setAnimation(google.maps.Animation.BOUNCE);
+    }
+
+    return infoWindow;
 }
