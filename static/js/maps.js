@@ -67,6 +67,10 @@ function askQuestion(question) {
     var url = new URL(window.location.origin + '/ask');
     var names = parkMarkers.map(x => x.getTitle())
     var payload = {parks: names, question: question}
+    var loader = document.getElementById("loader");
+    loader.classList.remove("hidden");
+    loader.classList.remove("fade-out");
+    loader.classList.add("fade-in");
     fetch(url, {
         method: 'POST',
         headers: {
@@ -170,6 +174,9 @@ function createParksMarker(park) {
 }
 
 function addInfoWindows(parks) {
+    var loader = document.getElementById("loader");
+    loader.classList.add("fade-out");
+    loader.classList.remove("fade-in");
     parks.map(createInfoWindow);
 }
 
