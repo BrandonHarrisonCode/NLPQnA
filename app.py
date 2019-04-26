@@ -3,7 +3,7 @@ import requests
 import json
 import urllib.parse
 import geopy.distance
-from flask import Flask, request, render_template, abort
+from flask import Flask, request, render_template, abort, url_for
 from deeppavlov import build_model, configs
 from bs4 import BeautifulSoup
 from unicodedata import normalize
@@ -28,27 +28,43 @@ def getLatLong(park):
 
 def get_national_parks_official():
     parks = []
+
+    nps_parks = []
     limit = 50
     start = 0
-    while True:
-        url = 'https://developer.nps.gov/api/v1/parks?q=National Park&limit={}&start={}&api_key={}'.format(limit, start, NPS_API_KEY)
-        result = requests.get(url)
-        data = json.loads(result.content)['data']
-        if not data:
-            break
-        for park in data:
-            if 'National Park' in park['designation']:
-                name = park['fullName']
-                latitude, longitude = getLatLong(park)
-                parks.append({'name': name, 'lat': latitude, 'lng': longitude})
-        start += limit
+    try:
+        while True:
+            url = 'https://developer.nps.gov/api/v1/parks?q=National Park&limit={}&start={}&api_key={}'.format(limit, start, NPS_API_KEY)
+            result = requests.get(url)
+            data = json.loads(result.content)['data']
+            if not data:
+                break
+            for park in data:
+                if 'National Park' in park['designation']:
+                    name = park['fullName']
+                    latitude, longitude = getLatLong(park)
+                    nps_parks.append({'name': name, 'lat': latitude, 'lng': longitude})
+                    start += limit
+    except e:
+        pass
+
+    with open('static/national_parks.json') as f:
+        fallback_parks = json.loads(f.read())
+
+    if len(nps_parks) < len(fallback_parks):
+        print('ERROR getting parks data from NPS.  Using fallback data.')
+        parks = fallback_parks
+    else:
+        parks = nps_parks
+
     return parks
 national_parks_official = get_national_parks_official()
 
 
 @app.route('/', methods=['GET'])
 def landing():
-    return 'This is the NLP Project 3 API service.'
+    return render_template('answerform.html', GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY)
+
 
 
 @app.route('/parksNearby', methods=['GET'])
@@ -58,29 +74,16 @@ def results_in_radius():
     radius = float(request.args.get('radius')) / meters_per_mile
     if radius > 300:
         abort(400)
-    print(radius)
 
     inbound_parks = []
     for park in national_parks_official:
-        name = park['name'] 
+        name = park['name']
         loc_lat = park['lat']
         loc_lng = park['lng']
         distance = geopy.distance.distance((latitude, longitude), (loc_lat, loc_lng)).miles
-        print('Name & distance: {} - {}'.format(name, distance))
         if distance <= radius:
-            park = {'name': name, 'latitude': loc_lat, 'longitude': loc_lng}
-            print(park)
             inbound_parks.append(park)
     return json.dumps(inbound_parks)
-
-
-def ask_questions(national_parks):
-    responses = []
-    for park in national_parks:
-        page = get_wikipedia_page(park['name'])
-        responses.append((park['name'], model([page], [question])))
-    print(responses)
-    return str(responses)
 
 
 def get_wikipedia_page(title):
@@ -100,15 +103,16 @@ def get_wikipedia_page(title):
     return normalized_text
 
 
-@app.route('/answer', methods=['GET'])
-def answer_form():
-    return render_template('answerform.html', GOOGLE_MAPS_API_KEY=GOOGLE_MAPS_API_KEY)
-
-
-@app.route('/answer', methods=['POST'])
-def answer():
-    print(request.form)
-    context = request.form.get('context')
-    question = request.form.get('question')
-    response = model([context], [question])
-    return render_template('answerform.html', ans=response[0])
+@app.route('/ask', methods=['POST'])
+def ask():
+    data = request.get_json()
+    parks = data.get('parks')
+    question = data.get('question')
+    if parks is None or question is None:
+        abort(400)
+    output = []
+    for park in parks:
+        context = get_wikipedia_page(park)
+        response = model([context], [question])
+        output.append({'name': park, 'answer': response})
+    return json.dumps(output)

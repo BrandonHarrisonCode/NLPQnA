@@ -19,7 +19,6 @@ function initMap() {
     });
 
     controlDiv = createControlDiv();
-    // controlDiv = document.getElementById('controls');
     map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(controlDiv);
 }
 
@@ -33,9 +32,6 @@ function createControlDiv() {
     row.classList.add("input-group");
     row.classList.add("mb-3");
 
-    // var inputDiv = document.createElement('div');
-    // inputDiv.classList.add("col-xs-10");
-
     // Create an input field
     var controlInput = document.createElement('input');
     controlInput.type = "text";
@@ -45,7 +41,6 @@ function createControlDiv() {
     controlInput.placeholder = "What do you want to know?";
 
     var submitDiv = document.createElement('div');
-    // submitDiv.classList.add("col-xs-2");
     submitDiv.classList.add("input-group-btn");
 
     // Create a button to send the information
@@ -55,17 +50,32 @@ function createControlDiv() {
     controlButton.type = "button";
     controlButton.innerHTML = 'Ask!';
 
-    // Append everything to the wrapper div
-    // inputDiv.appendChild(controlInput);
-    // submitDiv.appendChild(controlButton);
-    // row.appendChild(inputDiv);
-    // row.appendChild(submitDiv);
     submitDiv.appendChild(controlButton);
     row.appendChild(controlInput);
     row.appendChild(submitDiv);
     controlDiv.appendChild(row);
 
+    controlButton.addEventListener('click', function(event) {
+        askQuestion(controlInput.value);
+    }, false);
+
     return controlDiv;
+}
+
+function askQuestion(question) {
+    var url = new URL(window.location.origin + '/ask');
+    var names = parkMarkers.map(x => x.getTitle())
+    var payload = {parks: names, question: question}
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+    })
+        .then(data=>{return data.json()})
+        .then(res=>{console.log(res)})
 }
 
 function placeMarker(location, map) {
@@ -133,7 +143,6 @@ function markParks(parks) {
         parkMarkers.map(removeFromMap);
     }
 
-    console.log(parks);
     parkMarkers = parks.map(createParksMarker);
 }
 
@@ -151,6 +160,7 @@ function createParksMarker(park) {
         position: {lat: park.latitude, lng: park.longitude},
         map: map,
         icon: icon,
+        title: park.name,
     });
 
     return parkMarker;
