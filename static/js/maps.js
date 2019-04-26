@@ -68,6 +68,7 @@ function askQuestion(question) {
     var names = parkMarkers.map(x => x.getTitle())
     var payload = {parks: names, question: question}
     var loader = document.getElementById("loader");
+    loader.style.zIndex = 100;
     loader.classList.remove("hidden");
     loader.classList.remove("fade-out");
     loader.classList.add("fade-in");
@@ -177,6 +178,7 @@ function addInfoWindows(parks) {
     var loader = document.getElementById("loader");
     loader.classList.add("fade-out");
     loader.classList.remove("fade-in");
+    loader.style.zIndex = -1;
     parks.map(createInfoWindow);
 }
 
