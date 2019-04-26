@@ -17,6 +17,55 @@ function initMap() {
     map.addListener('click', function(event) {
         placeMarker(event.latLng, map);
     });
+
+    controlDiv = createControlDiv();
+    // controlDiv = document.getElementById('controls');
+    map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(controlDiv);
+}
+
+function createControlDiv() {
+    // Create a div to hold everything else
+    var controlDiv = document.createElement('div');
+    controlDiv.id = "controls";
+    controlDiv.style.width = "60%";
+
+    var row = document.createElement('div');
+    row.classList.add("input-group");
+    row.classList.add("mb-3");
+
+    // var inputDiv = document.createElement('div');
+    // inputDiv.classList.add("col-xs-10");
+
+    // Create an input field
+    var controlInput = document.createElement('input');
+    controlInput.type = "text";
+    controlInput.classList.add("form-control");
+    controlInput.id = "question";
+    controlInput.name = "question";
+    controlInput.placeholder = "What do you want to know?";
+
+    var submitDiv = document.createElement('div');
+    // submitDiv.classList.add("col-xs-2");
+    submitDiv.classList.add("input-group-btn");
+
+    // Create a button to send the information
+    var controlButton = document.createElement('button');
+    controlButton.classList.add("btn");
+    controlButton.classList.add("btn-primary");
+    controlButton.type = "button";
+    controlButton.innerHTML = 'Ask!';
+
+    // Append everything to the wrapper div
+    // inputDiv.appendChild(controlInput);
+    // submitDiv.appendChild(controlButton);
+    // row.appendChild(inputDiv);
+    // row.appendChild(submitDiv);
+    submitDiv.appendChild(controlButton);
+    row.appendChild(controlInput);
+    row.appendChild(submitDiv);
+    controlDiv.appendChild(row);
+
+    return controlDiv;
 }
 
 function placeMarker(location, map) {
